@@ -1,0 +1,21 @@
+/** Ecoregion FWI–FRP chart filenames (place PNGs in assets/ecoregions/) */
+window.LSI_ECOREGION_FILES = [
+  "Western_Himalayan_broadleaf_forests-056a6d8d-95c6-47b0-acdd-dfe693845c0d.png",
+  "Western_Himalayan_subalpine_conifer_forests-f02853d8-4400-4b6d-bf11-d2301a66b283.png",
+  "Eastern_Himalayan_broadleaf_forests-d6ba86d4-f3f2-44bb-9e05-8a9edd49b6e7.png",
+  "Northeast_Himalayan_subalpine_conifer_forests-4757abc3-dee9-4e57-b1b8-f510aea40b45.png",
+  "Northeast_India-Myanmar_pine_forests-dcde152a-4ce5-4701-9dbd-db8567667d91.png",
+  "Terai-Duar_savanna_and_grasslands-5e272a2f-f3d7-4d71-9e63-edd9c373a43f.png",
+  "Brahmaputra_Valley_semi-evergreen_forests-6cebc420-2773-41ed-b946-1a3a154db921.png",
+  "Upper_Gangetic_Plains_moist_deciduous_forests-71b34cb7-5823-4735-9e4f-8c3909040d27.png",
+  "Central_Deccan_Plateau_dry_deciduous_forests-41bb5f88-c8c2-48e0-b4de-235dfa3bb025.png",
+  "North_Deccan_dry_deciduous_forests-61bce1b4-1cfd-4315-80c0-e698db6c71c4.png",
+  "South_Deccan_Plateau_dry_deciduous_forests-640b0083-343f-4d28-970b-860c3c75df03.png",
+  "North_Western_Ghats_moist_deciduous_forests-fd284246-9fb5-4098-ad08-7931bb7741d8.png",
+  "South_Western_Ghats_moist_deciduous_forests-c4dac208-7973-4358-bb70-8afce54ba66c.png",
+  "South_Western_Ghats_montane_rain_forests-f6ed8a38-43ca-49ad-9965-7aefa4987e26.png",
+  "Narmada_Valley_dry_deciduous_forests-313abaa6-7ea2-4607-b8ed-20cf3bc49710.png",
+  "Orissa_semi-evergreen_forests-0ef41502-b1bc-4644-aee5-07f1046549bc.png",
+  "Aravalli_west_thorn_scrub_forests-032227a3-23d4-4765-8fa7-7d17ff364887.png",
+  "Rock_and_Ice-7c75428c-1acb-4981-9854-72e12e6e4bea.png",
+];
