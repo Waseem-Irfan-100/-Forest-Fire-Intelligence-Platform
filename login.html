@@ -1053,12 +1053,16 @@
             err.innerHTML = '<i class="ti ti-alert-circle" aria-hidden="true"></i> Invalid email or password. Please try again.';
             return;
           }
+
+          localStorage.setItem("loggedIn", "true");
+
           document.getElementById("login-form").style.display = "none";
           document.getElementById("success-state").style.display = "block";
-
+          
+          sessionStorage.setItem("lsi_auth", "true");
           setTimeout(() => {
             window.location.href = "dashboard.html";
-          },1000)
+            }, 1000);
         }, 1400);
       }
 

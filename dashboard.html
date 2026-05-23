@@ -3,12 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
   <title>Dashboard — LSI Lab India Fire Intelligence</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;0,9..40,500;0,9..40,600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet" />
+
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+  <!-- MapLibre -->
+  <link
+    href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css"
+    rel="stylesheet"
+  />
+
   <style>
     :root {
       color-scheme: dark;
@@ -202,6 +212,35 @@
       }
       body:not(.sidebar-collapsed) .sidebar { display: block; }
     }
+
+    /* ── MapLibre Popup Styling ── */
+
+    .maplibregl-popup-content {
+      background: rgba(255, 255, 255, 0.96);
+      color: #000000 !important;
+
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.6;
+
+      border-radius: 14px;
+
+      padding: 14px 16px;
+
+      box-shadow:
+        0 8px 24px rgba(0,0,0,0.18);
+    }
+
+    .maplibregl-popup-tip {
+      border-top-color: rgba(255,255,255,0.96) !important;
+    }
+
+    .maplibregl-popup-close-button {
+      color: #000000;
+      font-size: 18px;
+      padding: 4px 8px;
+    }
   </style>
 </head>
 <body>
@@ -281,8 +320,34 @@
 
       <p class="section-label">Map layers</p>
       <ul class="layer-list">
+        <li><label><input type="checkbox" id="layer-labels" checked> Place labels</label></li>
         <li><label><input type="checkbox" id="layer-fires" checked /> Active fire detections</label></li>
         <li><label><input type="checkbox" id="layer-heat" /> FWI risk heatmap</label></li>
+      </ul>
+
+      <p class="section-label">Administrative boundaries</p>
+      <ul class="layer-list">
+        <li>
+          <label style="display:flex;align-items:center;gap:8px;width:100%">
+            <input type="checkbox" id="layer-states" />
+            <span style="display:inline-block;width:22px;height:3px;background:#fb923c;border-radius:2px;flex-shrink:0"></span>
+            State boundaries
+          </label>
+        </li>
+        <li>
+          <label style="display:flex;align-items:center;gap:8px;width:100%">
+            <input type="checkbox" id="layer-districts" />
+            <span style="display:inline-block;width:22px;height:2px;background:#facc15;border-radius:2px;flex-shrink:0;border-bottom:2px dashed #facc15;background:none"></span>
+            District boundaries
+          </label>
+        </li>
+        <li>
+          <label style="display:flex;align-items:center;gap:8px;width:100%">
+            <input type="checkbox" id="layer-divisions" />
+            <span style="display:inline-block;width:22px;height:2px;background:none;border-bottom:2px dotted #818cf8;flex-shrink:0"></span>
+            Division / sub-district
+          </label>
+        </li>
       </ul>
 
       <div class="legend">
@@ -321,8 +386,7 @@
     }
     document.body.classList.add("sidebar-collapsed");
   </script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
   <script src="js/ecoregion-files.js"></script>
   <script src="js/india-fire-data.js"></script>
   <script src="js/dashboard.js"></script>
