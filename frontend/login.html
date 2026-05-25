@@ -338,6 +338,11 @@
 
     .right-header {
       margin-bottom: clamp(24px, 5vw, 36px);
+      display:grid;
+    }
+
+    .gaping{
+      margin-bottom: 20px;
     }
 
     .right-header h2 {
@@ -773,6 +778,56 @@
         animation: none !important;
       }
     }
+
+    #show-signup{
+      display: inline-block;
+      margin-top: 18px;
+      padding: 10px 22px;
+
+      font-size: 15px;
+      font-weight: 600;
+      font-family: var(--font-sans);
+
+      color: #c7d7ff;
+      text-decoration: none;
+      letter-spacing: 0.03em;
+
+      border: 1px solid rgba(147, 197, 253, 0.18);
+      border-radius: 12px;
+
+      background: rgba(20, 32, 56, 0.35);
+      backdrop-filter: blur(12px);
+
+      transition:
+        transform 0.25s ease,
+        background 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        color 0.25s ease;
+
+      box-shadow:
+        0 4px 18px rgba(0,0,0,0.18),
+        0 0 18px rgba(37,99,235,0.08);
+    }
+
+    #show-signup:hover{
+      transform: translateY(-2px);
+
+      background: rgba(37, 99, 235, 0.18);
+
+      border-color: rgba(96, 165, 250, 0.45);
+
+      color: #ffffff;
+
+      box-shadow:
+        0 8px 28px rgba(0,0,0,0.25),
+        0 0 24px rgba(37,99,235,0.22);
+    }
+
+    #show-signup:active{
+      transform: scale(0.98);
+    }
+
   </style>
 </head>
 <body>
@@ -830,95 +885,281 @@
         </div>
       </div>
 
-      <div class="right">
-        <div class="right-inner">
-          <div id="login-form">
-            <div class="right-header">
-              <h2>Sign in</h2>
-              <p>Access your forest fire monitoring dashboard</p>
-            </div>
+<div class="right">
+  <div class="right-inner">
 
-            <div style="margin-bottom:18px">
-              <div class="role-label">Sign in as</div>
-              <div class="role-select">
-                <button type="button" class="role-btn active" data-role="analyst">
-                  <i class="ti ti-chart-line" aria-hidden="true"></i>Analyst
-                </button>
-                <button type="button" class="role-btn" data-role="officer">
-                  <i class="ti ti-tree" aria-hidden="true"></i>Range officer
-                </button>
-                <button type="button" class="role-btn" data-role="researcher">
-                  <i class="ti ti-microscope" aria-hidden="true"></i>Researcher
-                </button>
-              </div>
-            </div>
+    <!-- LOGIN FORM -->
+    <div id="login-form">
 
-            <div class="field">
-              <label for="email">Email address</label>
-              <div class="field-wrap">
-                <i class="ti ti-mail field-icon" aria-hidden="true"></i>
-                <input type="email" id="email" placeholder="you@forestdept.gov.in" autocomplete="email" />
-              </div>
-            </div>
+      <div class="right-header">
+        <h2>Sign in</h2>
+        <p>Access your forest fire monitoring dashboard</p>
+      </div>
 
-            <div class="field">
-              <label for="password">Password</label>
-              <div class="field-wrap">
-                <i class="ti ti-lock field-icon" aria-hidden="true"></i>
-                <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" />
-                <button type="button" class="toggle-pw" aria-label="Show password" id="pw-toggle">
-                  <i class="ti ti-eye" id="pw-icon" aria-hidden="true"></i>
-                </button>
-              </div>
-            </div>
+      <div style="margin-bottom:18px">
+        <div class="role-label">Sign in as</div>
 
-            <div class="form-row">
-              <label class="remember-label">
-                <input type="checkbox" id="remember" />
-                Keep me signed in
-              </label>
-              <a href="#" class="forgot-link">Forgot password?</a>
-            </div>
+        <div class="role-select">
 
-            <div class="error-msg" id="err-msg" role="alert">
-              <i class="ti ti-alert-circle" aria-hidden="true"></i> Invalid email or password. Please try again.
-            </div>
+          <button type="button" class="role-btn active">
+            <i class="ti ti-chart-line"></i>
+            Analyst
+          </button>
 
-            <button type="button" class="signin-btn" id="signin-btn">
-              <i class="ti ti-login" aria-hidden="true" style="font-size:16px"></i>
-              Sign in to dashboard
-            </button>
+          <button type="button" class="role-btn">
+            <i class="ti ti-tree"></i>
+            Range officer
+          </button>
 
-            <div class="divider">or</div>
+          <button type="button" class="role-btn">
+            <i class="ti ti-microscope"></i>
+            Researcher
+          </button>
 
-            <button type="button" class="sso-btn" id="sso-btn">
-              <i class="ti ti-building" aria-hidden="true" style="font-size:16px"></i>
-              Sign in with Forest Dept. SSO ↗
-            </button>
-
-            <div class="footer-links">
-              <a href="#">Privacy policy</a>
-              <a href="#">Terms of use</a>
-              <a href="#" id="request-access">Request access</a>
-            </div>
-          </div>
-
-          <div class="success-state" id="success-state">
-            <div class="success-icon">
-              <i class="ti ti-check" aria-hidden="true"></i>
-            </div>
-            <div style="font-size:17px;font-weight:600;font-family:var(--font-display);color:var(--color-text-primary);margin-bottom:8px">Signed in</div>
-            <div style="font-size:14px;color:var(--color-text-secondary)">Redirecting to your dashboard…</div>
-          </div>
         </div>
       </div>
+
+      <div class="field">
+        <label>Email address</label>
+
+        <div class="field-wrap">
+          <i class="ti ti-mail field-icon"></i>
+
+          <input
+            type="email"
+            id="email"
+            placeholder="you@forestdept.gov.in"
+          >
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+
+        <div class="field-wrap">
+
+          <i class="ti ti-lock field-icon"></i>
+
+          <input
+            type="password"
+            id="password"
+            placeholder="Enter your password"
+          >
+
+          <button type="button"
+                  class="toggle-pw"
+                  id="pw-toggle">
+
+            <i class="ti ti-eye" id="pw-icon"></i>
+
+          </button>
+
+        </div>
+      </div>
+
+      <div class="form-row">
+
+        <label class="remember-label">
+          <input type="checkbox">
+          Keep me signed in
+        </label>
+
+        <a href="#" class="forgot-link">
+          Forgot password?
+        </a>
+
+      </div>
+
+      <button type="button"
+              class="signin-btn"
+              id="signin-btn">
+
+        <i class="ti ti-login"></i>
+        Sign in to dashboard
+
+      </button>
+
+      <div class="divider">or</div>
+
+      <button type="button" class="sso-btn">
+
+        <i class="ti ti-building"></i>
+
+        Sign in with Forest Dept. SSO ↗
+
+      </button>
+
+      <div style="margin-top:24px">
+
+        <div class="new-user-text">
+          Are you a New User?
+        </div>
+
+        <div style="text-align:center;">
+
+          <a href="#" id="show-signup">
+            Create Account
+          </a>
+
+        </div>
+
+        <div style="text-align:center;margin-top:14px;">
+          <a href="/" style="font-size:13px;color:var(--muted);text-decoration:none;">
+            View fire dashboard without signing in →
+          </a>
+        </div>
+
+      </div>
+
+      <div class="footer-links">
+
+        <a href="#">Privacy policy</a>
+
+        <a href="#">Terms of use</a>
+
+        <a href="#">Request access</a>
+
+      </div>
+
     </div>
+
+
+
+
+
+    <!-- SIGNUP FORM -->
+    <div id="signup-form" style="display:none;">
+
+      <div class="right-header">
+        <h2>Create account</h2>
+        <p>Register for Forest Fire Intelligence Platform</p>
+      </div>
+
+      <div class="field">
+        <label>Full Name</label>
+
+        <div class="field-wrap">
+          <i class="ti ti-user field-icon"></i>
+
+          <input
+            type="text"
+            id="signup-name"
+            placeholder="Enter full name"
+          >
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Phone Number</label>
+
+        <div class="field-wrap">
+          <i class="ti ti-phone field-icon"></i>
+
+          <input
+            type="tel"
+            id="signup-phone"
+            placeholder="+91 XXXXX XXXXX"
+          >
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Email Address</label>
+
+        <div class="field-wrap">
+          <i class="ti ti-mail field-icon"></i>
+
+          <input
+            type="email"
+            id="signup-email"
+            placeholder="you@example.com"
+          >
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Affiliation</label>
+
+        <div class="field-wrap">
+          <i class="ti ti-building field-icon"></i>
+
+          <input
+            type="text"
+            id="signup-affiliation"
+            placeholder="Organization"
+          >
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Domain of Application</label>
+
+        <div class="field-wrap">
+          <i class="ti ti-world field-icon"></i>
+
+          <input
+            type="text"
+            id="signup-domain"
+            placeholder="Research / Govt / Monitoring"
+          >
+        </div>
+      </div>
+
+      <button class="signin-btn" id="register-btn">
+
+        <i class="ti ti-user-plus"></i>
+
+        Register
+
+      </button>
+
+      <div style="text-align:center; margin-top:20px;">
+
+        <a href="#" id="show-login">
+          Already have an account?
+        </a>
+
+      </div>
+
+    </div>
+
+
+
+
+
+    <!-- SUCCESS -->
+    <div class="success-state" id="success-state">
+
+      <div class="success-icon">
+        <i class="ti ti-check"></i>
+      </div>
+
+      <div style="
+        font-size:17px;
+        font-weight:600;
+        font-family:var(--font-display);
+        color:var(--color-text-primary);
+        margin-bottom:8px;
+      ">
+        Signed in
+      </div>
+
+      <div style="
+        font-size:14px;
+        color:var(--color-text-secondary);
+      ">
+        Redirecting to your dashboard…
+      </div>
+
+    </div>
+
   </div>
+</div>
 
   <script>
     (function () {
       /* ── Asset paths + background video ── */
-      const assetBase = new URL("assets/", window.location.href);
+      const assetBase = new URL("/assets/", window.location.origin);
       const backdrop = document.querySelector(".video-backdrop");
       const bgVideo = document.getElementById("bg-video");
       const logoImg = document.querySelector(".brand-logo-wrap img");
@@ -1024,7 +1265,12 @@
         }
       });
 
-      function doLogin() {
+      function getCsrfToken() {
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        return match ? decodeURIComponent(match[1]) : "";
+      }
+
+      async function doLogin() {
         const email = document.getElementById("email").value.trim();
         const pw = document.getElementById("password").value;
         const err = document.getElementById("err-msg");
@@ -1042,28 +1288,42 @@
         }
 
         const btn = document.getElementById("signin-btn");
+        const defaultLabel = '<i class="ti ti-login" aria-hidden="true" style="font-size:16px"></i> Sign in to dashboard';
         btn.innerHTML = '<i class="ti ti-loader-2" aria-hidden="true" style="animation:spin 1s linear infinite;font-size:16px"></i> Signing in…';
         btn.disabled = true;
 
-        setTimeout(() => {
-          if (pw === "wrong") {
-            btn.innerHTML = '<i class="ti ti-login" aria-hidden="true" style="font-size:16px"></i> Sign in to dashboard';
-            btn.disabled = false;
+        try {
+          const res = await fetch("/api/auth/login/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCsrfToken(),
+            },
+            credentials: "same-origin",
+            body: JSON.stringify({ email, password: pw }),
+          });
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok) {
             err.style.display = "block";
-            err.innerHTML = '<i class="ti ti-alert-circle" aria-hidden="true"></i> Invalid email or password. Please try again.';
+            err.innerHTML = '<i class="ti ti-alert-circle" aria-hidden="true"></i> ' +
+              (data.error || "Invalid email or password. Please try again.");
+            btn.innerHTML = defaultLabel;
+            btn.disabled = false;
             return;
           }
 
-          localStorage.setItem("loggedIn", "true");
-
           document.getElementById("login-form").style.display = "none";
           document.getElementById("success-state").style.display = "block";
-          
-          sessionStorage.setItem("lsi_auth", "true");
           setTimeout(() => {
-            window.location.href = "dashboard.html";
-            }, 1000);
-        }, 1400);
+            window.location.href = data.redirect || "/";
+          }, 800);
+        } catch {
+          err.style.display = "block";
+          err.innerHTML = '<i class="ti ti-alert-circle" aria-hidden="true"></i> Could not reach the server. Is Django running on port 8000?';
+          btn.innerHTML = defaultLabel;
+          btn.disabled = false;
+        }
       }
 
       document.getElementById("signin-btn").addEventListener("click", doLogin);

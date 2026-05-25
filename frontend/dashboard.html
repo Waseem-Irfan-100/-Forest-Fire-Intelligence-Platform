@@ -247,7 +247,7 @@
   <header class="header">
     <div class="header-brand">
       <div class="header-logo">
-        <img src="assets/logo.png" alt="LSI" />
+        <img src="/assets/logo.png" alt="LSI" />
       </div>
       <div>
         <div class="header-title">LSI Lab India</div>
@@ -263,7 +263,10 @@
       <button type="button" class="btn" id="sidebar-toggle" aria-label="Toggle panel">
         <i class="ti ti-layout-sidebar" aria-hidden="true"></i>
       </button>
-      <button type="button" class="btn" id="btn-logout">
+      <a href="/login/" class="btn" id="btn-signin" style="text-decoration:none">
+        <i class="ti ti-login" aria-hidden="true"></i> Sign in
+      </a>
+      <button type="button" class="btn" id="btn-logout" hidden>
         <i class="ti ti-logout" aria-hidden="true"></i> Sign out
       </button>
     </div>
@@ -380,15 +383,10 @@
     </aside>
   </div>
 
-  <script>
-    if (!sessionStorage.getItem("lsi_auth")) {
-      window.location.replace("login.html");
-    }
-    document.body.classList.add("sidebar-collapsed");
-  </script>
+  <script>document.body.classList.add("sidebar-collapsed");</script>
   <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
-  <script src="js/ecoregion-files.js"></script>
-  <script src="js/india-fire-data.js"></script>
-  <script src="js/dashboard.js"></script>
+  <script src="/js/ecoregion-files.js"></script>
+  <script src="/js/india-fire-data.js"></script>
+  <script src="/js/dashboard.js"></script>
 </body>
 </html>

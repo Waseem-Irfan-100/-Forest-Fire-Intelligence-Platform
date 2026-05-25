@@ -23,24 +23,26 @@ Wire this to a FastAPI/Flask service that ingests ERA5 daily grids and returns G
 - `assets/earth.mp4` — login background video
 - `assets/ecoregions/*.png` — FWI vs FRP scatter plots per ecoregion
 
-## Run locally
+## Run locally (Django — recommended)
 
-**Do not** open `login.html` directly as a `file://` URL — the background video often will not play, and asset paths can fail depending on the browser.
-
-Start a local server **from this project folder** (`transpo`):
-
-```bash
-cd d:\Projects\transpo
-python -m http.server 8080
-```
-
-On Windows you can also run:
+The Django backend serves the map dashboard, hides the FIRMS API key, and handles login.
 
 ```powershell
-.\serve.ps1
+cd d:\Projects\forestfire\backend
+pip install -r requirements.txt
+# Ensure backend/.env contains: FIRMS_API_KEY=your_map_key_from_firms.nasa.gov
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
 ```
 
-Then visit **http://localhost:8080/login.html**
+| URL | Purpose |
+|-----|---------|
+| http://127.0.0.1:8000/ | **Dashboard** (public — no login required) |
+| http://127.0.0.1:8000/login/ | Sign in (optional) |
+| http://127.0.0.1:8000/api/fires/ | FIRMS proxy (JSON hotspots) |
+
+**Do not** open HTML as `file://` — use Django so `/api/fires/` and assets resolve correctly.
 
 ### Logo / video not showing?
 

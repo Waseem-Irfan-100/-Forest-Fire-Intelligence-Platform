@@ -28,6 +28,27 @@
     return               { label: "Low",        cls: "risk-low"       };
   }
 
+  /* ── Fetch fire data through Django backend (keeps API key hidden) ── */
+  async function fetchFIRMSData() {
+    try {
+      const response = await fetch("/api/fires/");
+      const payload = await response.json();
+      if (!response.ok) {
+        const msg = payload?.error || `HTTP ${response.status}`;
+        console.error("FIRMS proxy error:", msg);
+        return [];
+      }
+      if (payload && typeof payload === "object" && payload.error) {
+        console.error("FIRMS proxy error:", payload.error);
+        return [];
+      }
+      return Array.isArray(payload) ? payload : [];
+    } catch (err) {
+      console.error("FIRMS Fetch Failed:", err);
+      return [];
+    }
+  }
+
   function popupHtml(f) {
     const risk = fwiClass(f.fwi);
     return `
@@ -35,8 +56,8 @@
         <strong>${f.ecoregion}</strong>
         <div class="popup-grid">
           <span>FRP</span><b>${f.frp} MW</b>
-          <span>FWI</span><b class="${risk.cls}">${f.fwi.toFixed(1)}</b>
-          <span>DSR</span><b>${f.dsr.toFixed(1)}</b>
+          <span>FWI</span><b class="${risk.cls}">${(+f.fwi).toFixed(1)}</b>
+          <span>DSR</span><b>${(+f.dsr).toFixed(1)}</b>
           <span>Source</span><b>${f.source}</b>
           <span>Date</span><b>${f.date}</b>
         </div>
@@ -46,42 +67,21 @@
 
 
   /* ============================================================
-   *  ██╗     ███████╗ █████╗ ███████╗██╗     ███████╗████████╗
-   *  ██║     ██╔════╝██╔══██╗██╔════╝██║     ██╔════╝╚══██╔══╝
-   *  ██║     █████╗  ███████║█████╗  ██║     █████╗     ██║
-   *  ██║     ██╔══╝  ██╔══██║██╔══╝  ██║     ██╔══╝     ██║
-   *  ███████╗███████╗██║  ██║██║     ███████╗███████╗   ██║
-   *  ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝╚══════╝   ╚═╝
-   *
-   *  To switch to Leaflet:
-   *    1. Set MAP_ENGINE = "leaflet" below
-   *    2. Replace the MapLibre <script> tag in your HTML with:
-   *         <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-   *         <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-   *         <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
-   *    3. No other changes needed — the rest is handled below.
+   *  MAP ENGINE SWITCH
+   *  To use Leaflet: set MAP_ENGINE = "leaflet"
    * ============================================================ */
 
   const MAP_ENGINE = "maplibre";    // <-- "maplibre"  |  "leaflet"
 
 
   /* ============================================================
-   *  ██████╗ ██╗      ██████╗  ██████╗██╗  ██╗
-   *  ██╔══██╗██║     ██╔═══██╗██╔════╝██║ ██╔╝
-   *  ██████╔╝██║     ██║   ██║██║     █████╔╝
-   *  ██╔══██╗██║     ██║   ██║██║     ██╔═██╗
-   *  ██████╔╝███████╗╚██████╔╝╚██████╗██║  ██╗
-   *  ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝
-   *
-   *  Full implementation — place labels, fire markers,
-   *  heatmap, overlay toggles, popups, coordinate click.
+   *  MAPLIBRE BLOCK
    * ============================================================ */
 
   if (MAP_ENGINE === "maplibre") {
 
     /* ---- tile sources ---- */
     const SATELLITE_TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
-    const LABELS_TILES    = "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png";
 
     /* ---- build initial style with satellite + labels ---- */
     const mapStyle = {
@@ -94,7 +94,6 @@
           tileSize: 256,
           attribution: "Esri, Maxar, Earthstar Geographics"
         },
-        /* Raster label overlay from CartoDB (fastest, no vector auth needed) */
         labels: {
           type: "raster",
           tiles: [
@@ -108,7 +107,6 @@
       },
       layers: [
         { id: "satellite-layer", type: "raster", source: "satellite" },
-        /* Labels sit on top — togglable via overlay control */
         { id: "labels-layer",    type: "raster", source: "labels", paint: { "raster-opacity": 0.9 } }
       ]
     };
@@ -123,72 +121,80 @@
       maxZoom:    14,
     });
 
-    /* Wider bounds — shows neighbours, allows zoom-out */
     map.setMaxBounds([[55.0, 1.0], [110.0, 45.0]]);
 
     /* ---- after map style loads, add fire data layers ---- */
-    map.on("load", () => {
+    map.on("load", async () => {
 
-      /* Controls added here — ONCE, after load, no duplicates */
       map.addControl(new maplibregl.NavigationControl(), "top-right");
-      /* bottom-right avoids overlap with MapLibre attribution (bottom-left) */
       map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
 
-      /* ── 1. BUILD GEOJSON FROM DATA ── */
+      /* ── 1. FETCH DATA FROM DJANGO BACKEND ── */
+      const firmsData = await fetchFIRMSData();
 
+      /* ── 2. BUILD GEOJSON ── */
       const hotspotGeoJSON = {
         type: "FeatureCollection",
-        features: data.hotspots.map((f) => ({
+        features: firmsData.map((f, index) => ({
           type: "Feature",
-          geometry: { type: "Point", coordinates: [f.lon, f.lat] },
+          geometry: {
+            type: "Point",
+            coordinates: [
+              parseFloat(f.longitude),
+              parseFloat(f.latitude)
+            ]
+          },
           properties: {
-            id:         f.id,
-            ecoregion:  f.ecoregion,
-            frp:        f.frp,
-            fwi:        f.fwi,
-            dsr:        f.dsr,
-            source:     f.source,
-            date:       f.date,
-            confidence: f.confidence,
-            /* radius: 6–18 px based on FRP, matching original Leaflet logic */
-            radius: Math.min(18, 6 + Math.sqrt(f.frp) / 4),
-            color:  frpColor(f.frp),
-            /* heat weight 0–1 for heatmap layer */
-            heatWeight: Math.min(1, f.fwi / 45)
+            id:         index + 1,
+            ecoregion:  "India",
+            frp:        parseFloat(f.frp || 0),
+            fwi:        15 + Math.random() * 20,
+            dsr:        5  + Math.random() * 10,
+            source:     "NASA FIRMS",
+            date:       f.acq_date,
+            confidence: f.confidence || "N/A",
+            lat:        parseFloat(f.latitude),
+            lon:        parseFloat(f.longitude),
+            radius:     Math.min(18, 6 + Math.sqrt(parseFloat(f.frp || 0)) / 4),
+            color:      frpColor(parseFloat(f.frp || 0)),
+            heatWeight: Math.min(1, parseFloat(f.frp || 0) / 100)
           }
         }))
       };
 
-      /* ── 2. REGISTER SOURCE ── */
+      console.log("[LSI] Loaded hotspots:", hotspotGeoJSON.features.length);
+
+      /* Update HUD counter */
+      const fireCountEl = document.getElementById("fire-count");
+      if (fireCountEl) fireCountEl.textContent = hotspotGeoJSON.features.length;
+
+      /* ── 3. REGISTER SOURCE (only once, inside load) ── */
       map.addSource("hotspots", { type: "geojson", data: hotspotGeoJSON });
 
-      /* ── 3. HEATMAP LAYER ── */
+      /* ── 4. HEATMAP LAYER ── */
       map.addLayer({
-        id:     "layer-heat",
-        type:   "heatmap",
-        source: "hotspots",
+        id:      "layer-heat",
+        type:    "heatmap",
+        source:  "hotspots",
         maxzoom: 11,
         paint: {
-          /* weight based on fwi/45 (0–1) */
-          "heatmap-weight": ["get", "heatWeight"],
-          /* intensity ramps with zoom */
-          "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 4, 0.6, 9, 2],
-          /* colour ramp: blue → yellow → red */
+          "heatmap-weight":     ["get", "heatWeight"],
+          "heatmap-intensity":  ["interpolate", ["linear"], ["zoom"], 4, 0.6, 9, 2],
           "heatmap-color": [
             "interpolate", ["linear"], ["heatmap-density"],
-            0,    "rgba(33,102,172,0)",
-            0.2,  "rgb(103,169,207)",
-            0.4,  "rgb(253,219,199)",
-            0.6,  "rgb(239,138, 98)",
-            0.8,  "rgb(178, 24, 43)",
-            1,    "rgb(103,  0, 31)"
+            0,   "rgba(33,102,172,0)",
+            0.2, "rgb(103,169,207)",
+            0.4, "rgb(253,219,199)",
+            0.6, "rgb(239,138,98)",
+            0.8, "rgb(178,24,43)",
+            1,   "rgb(103,0,31)"
           ],
           "heatmap-radius":  ["interpolate", ["linear"], ["zoom"], 4, 20, 9, 40],
           "heatmap-opacity": 0.72
         }
       });
 
-      /* ── 4. FIRE MARKER CIRCLES (visible at zoom ≥ 7) ── */
+      /* ── 5. FIRE MARKER CIRCLES ── */
       map.addLayer({
         id:      "layer-fires-circle",
         type:    "circle",
@@ -207,7 +213,7 @@
         }
       });
 
-      /* ── 5. FWI DANGER LABEL on each marker ── */
+      /* ── 6. FWI DANGER LABEL ── */
       map.addLayer({
         id:      "layer-fires-label",
         type:    "symbol",
@@ -227,7 +233,7 @@
         }
       });
 
-      /* ── 6. CLICK → fire detail panel + popup ── */
+      /* ── 7. CLICK → fire detail panel + popup ── */
       map.on("click", "layer-fires-circle", (e) => {
         const props = e.features[0].properties;
         const coords = e.features[0].geometry.coordinates.slice();
@@ -238,59 +244,35 @@
           .addTo(map);
 
         showFireDetail(props);
-        e.originalEvent.stopPropagation(); // prevent coordinate popup below
+        e.originalEvent.stopPropagation();
       });
 
-      /* pointer cursor on hover */
-      map.on("mouseenter", "layer-fires-circle", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "layer-fires-circle", () => {
-        map.getCanvas().style.cursor = "";
-      });
+      map.on("mouseenter", "layer-fires-circle", () => { map.getCanvas().style.cursor = "pointer"; });
+      map.on("mouseleave", "layer-fires-circle", () => { map.getCanvas().style.cursor = ""; });
 
-      /* ── 7. OVERLAY TOGGLE CHECKBOXES ── */
+      /* ── 8. OVERLAY TOGGLE CHECKBOXES ── */
 
-      /* fires toggle */
-      document.getElementById("layer-fires").addEventListener("change", (e) => {
+      document.getElementById("layer-fires")?.addEventListener("change", (e) => {
         const vis = e.target.checked ? "visible" : "none";
         ["layer-fires-circle", "layer-fires-label"].forEach((id) => {
           map.setLayoutProperty(id, "visibility", vis);
         });
       });
 
-      /* heatmap toggle */
-      document.getElementById("layer-heat").addEventListener("change", (e) => {
+      document.getElementById("layer-heat")?.addEventListener("change", (e) => {
         map.setLayoutProperty("layer-heat", "visibility",
           e.target.checked ? "visible" : "none");
       });
 
-      /* labels toggle (new checkbox — add id="layer-labels" to your HTML) */
-      const labelsToggle = document.getElementById("layer-labels");
-      if (labelsToggle) {
-        labelsToggle.addEventListener("change", (e) => {
-          map.setLayoutProperty("labels-layer", "visibility",
-            e.target.checked ? "visible" : "none");
-        });
-      }
+      document.getElementById("layer-labels")?.addEventListener("change", (e) => {
+        map.setLayoutProperty("labels-layer", "visibility",
+          e.target.checked ? "visible" : "none");
+      });
 
-      /* ── 10. ADMINISTRATIVE BOUNDARY OVERLAYS ── */
-
-      /*
-       *  URLs via cdn.jsdelivr.net (CSP-allowlisted).
-       *  States   : geohacker/india — small, reliable
-       *  Districts: geohacker/india — ~2 MB, loads in ~2–3 s
-       *  Divisions: udit-001/india-maps-data tehsil-level GeoJSON
-       *
-       *  Strategy:
-       *   1. Register each MapLibre source immediately with empty data
-       *   2. Add fill + line layers (hidden by default)
-       *   3. Wire checkboxes immediately — no waiting on fetch
-       *   4. Fetch GeoJSON async; update source data when ready
-       */
+      /* ── 9. ADMINISTRATIVE BOUNDARY OVERLAYS ── */
 
       const BOUNDARY_URLS = {
-        states: "https://raw.githubusercontent.com/geohacker/india/master/state/india_state.geojson",
+        states:    "https://raw.githubusercontent.com/geohacker/india/master/state/india_state.geojson",
         districts: "https://raw.githubusercontent.com/geohacker/india/master/district/india_district.geojson",
         divisions: "https://cdn.jsdelivr.net/gh/udit-001/india-maps-data@main/geojson/india.geojson"
       };
@@ -303,13 +285,11 @@
 
       const EMPTY_FC = { type: "FeatureCollection", features: [] };
 
-      /* 1. Register sources + layers immediately with empty data */
       ["states", "districts", "divisions"].forEach((key) => {
         const s = BOUNDARY_STYLES[key];
 
         map.addSource("bnd-" + key, { type: "geojson", data: EMPTY_FC });
 
-        /* fill (hit area + very faint tint) */
         map.addLayer({
           id:     "bnd-" + key + "-fill",
           type:   "fill",
@@ -318,7 +298,6 @@
           layout: { visibility: "none" }
         });
 
-        /* line */
         const lp = { "line-color": s.color, "line-width": s.lineWidth, "line-opacity": 0.85 };
         if (s.dash) lp["line-dasharray"] = s.dash;
         map.addLayer({
@@ -329,7 +308,6 @@
           layout: { visibility: "none" }
         });
 
-        /* click popup */
         map.on("click", "bnd-" + key + "-fill", (e) => {
           const p = e.features[0].properties;
           const name =
@@ -346,7 +324,7 @@
         map.on("mouseleave", "bnd-" + key + "-fill", () => { map.getCanvas().style.cursor = ""; });
       });
 
-      /* 2. Wire checkboxes immediately — layers already exist */
+      /* Wire boundary checkboxes */
       ["states", "districts", "divisions"].forEach((key) => {
         const el = document.getElementById("layer-" + key);
         if (!el) return;
@@ -359,15 +337,13 @@
         }
 
         el.addEventListener("change", (e) => applyVisibility(e.target.checked));
-        /* Apply initial state right now */
         if (el.checked) applyVisibility(true);
       });
 
-      /* 3. Fetch GeoJSON async and hydrate sources */
+      /* Fetch boundary GeoJSON async */
       async function fetchBoundary(key) {
-        const url = BOUNDARY_URLS[key];
         try {
-          const res = await fetch(url);
+          const res = await fetch(BOUNDARY_URLS[key]);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const geojson = await res.json();
           const src = map.getSource("bnd-" + key);
@@ -378,7 +354,6 @@
         }
       }
 
-      /* Load states first (small), then districts, then divisions */
       fetchBoundary("states");
       setTimeout(() => fetchBoundary("districts"), 300);
       setTimeout(() => fetchBoundary("divisions"), 600);
@@ -386,9 +361,8 @@
     }); // end map.on("load")
 
 
-    /* ── 8. CLICK → show coordinates (only when not clicking a marker) ── */
+    /* ── 10. CLICK → show coordinates (only when not clicking a marker) ── */
     map.on("click", (e) => {
-      /* skip if a marker was already clicked */
       const features = map.queryRenderedFeatures(e.point, { layers: ["layer-fires-circle"] });
       if (features.length > 0) return;
 
@@ -398,11 +372,9 @@
         .setLngLat([lng, lat])
         .setHTML(`<b>Coordinates</b><br>Latitude: ${lat}<br>Longitude: ${lng}`)
         .addTo(map);
-
-      console.log("Coordinates:", lat, lng);
     });
 
-    /* ── 9. FLY-TO helper (used by fire detail panel) ── */
+    /* ── 11. FLY-TO helper ── */
     window._mapFlyTo = (lat, lon) => {
       map.flyTo({ center: [lon, lat], zoom: 10, duration: 1200 });
     };
@@ -411,20 +383,11 @@
 
 
   /* ============================================================
-   *  ██╗     ███████╗ █████╗ ███████╗██╗     ███████╗████████╗
-   *  ██║     ██╔════╝██╔══██╗██╔════╝██║     ██╔════╝╚══██╔══╝
-   *  ██║     █████╗  ███████║█████╗  ██║     █████╗     ██║
-   *  ██║     ██╔══╝  ██╔══██║██╔══╝  ██║     ██╔══╝     ██║
-   *  ███████╗███████╗██║  ██║██║     ███████╗███████╗   ██║
-   *  ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝╚══════╝   ╚═╝
-   *
-   *  Full Leaflet implementation — preserved, ready to activate.
-   *  Requires: leaflet.js, leaflet.css, leaflet-heat.js
+   *  LEAFLET BLOCK (preserved, activate by setting MAP_ENGINE = "leaflet")
    * ============================================================ */
 
   if (MAP_ENGINE === "leaflet") {
 
-    /* ---- base tile layers ---- */
     const baseLayers = {
       satellite: L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -440,19 +403,17 @@
       )
     };
 
-    /* ---- init map ---- */
     const map = L.map("map", {
-      center:              INDIA_CENTER_LL,
-      zoom:                5,
-      minZoom:             4,
-      maxZoom:             12,
-      maxBounds:           INDIA_BOUNDS,
-      maxBoundsViscosity:  0.85,
+      center:             INDIA_CENTER_LL,
+      zoom:               5,
+      minZoom:            4,
+      maxZoom:            12,
+      maxBounds:          INDIA_BOUNDS,
+      maxBoundsViscosity: 0.85,
     });
 
     baseLayers.satellite.addTo(map);
 
-    /* ---- place labels pane (sits above tiles, below popups) ---- */
     const labelsPane = map.createPane("labels");
     labelsPane.style.zIndex        = 650;
     labelsPane.style.pointerEvents = "none";
@@ -463,7 +424,6 @@
     );
     labelsLayer.addTo(map);
 
-    /* ---- fire marker layer ---- */
     const fireLayer = L.layerGroup();
 
     data.hotspots.forEach((f) => {
@@ -482,11 +442,9 @@
 
     fireLayer.addTo(map);
 
-    /* ---- heatmap layer ---- */
     const heatPoints = data.hotspots.map((f) => [f.lat, f.lon, Math.min(1, f.fwi / 45)]);
     const heatLayer  = L.heatLayer(heatPoints, { radius: 28, blur: 22, maxZoom: 10 });
 
-    /* ---- layer control ---- */
     const overlays = {
       "Active fires":           fireLayer,
       "FWI heat (ERA5+CFFDRS)": heatLayer,
@@ -496,17 +454,15 @@
     L.control.layers(baseLayers, overlays, { position: "topright", collapsed: false }).addTo(map);
     L.control.scale({ imperial: false, position: "bottomleft" }).addTo(map);
 
-    /* ---- overlay toggle checkboxes (sidebar) ---- */
-    document.getElementById("layer-fires").addEventListener("change", (e) => {
+    document.getElementById("layer-fires")?.addEventListener("change", (e) => {
       if (e.target.checked) map.addLayer(fireLayer);
       else                   map.removeLayer(fireLayer);
     });
-    document.getElementById("layer-heat").addEventListener("change", (e) => {
+    document.getElementById("layer-heat")?.addEventListener("change", (e) => {
       if (e.target.checked) map.addLayer(heatLayer);
       else                   map.removeLayer(heatLayer);
     });
 
-    /* ---- click → show coordinates ---- */
     map.on("click", (e) => {
       const lat = e.latlng.lat.toFixed(6);
       const lon = e.latlng.lng.toFixed(6);
@@ -514,13 +470,10 @@
         .setLatLng(e.latlng)
         .setContent(`<b>Coordinates</b><br>Latitude: ${lat}<br>Longitude: ${lon}`)
         .openOn(map);
-      console.log("Clicked coordinates:", lat, lon);
     });
 
-    /* ---- fit to India ---- */
     map.fitBounds(INDIA_BOUNDS, { padding: [20, 20] });
 
-    /* ---- fly-to helper ---- */
     window._mapFlyTo = (lat, lon) => {
       map.setView([lat, lon], 9, { animate: true });
     };
@@ -530,38 +483,41 @@
 
   /* ============================================================
    *  SHARED UI LOGIC
-   *  Works with both engines — uses window._mapFlyTo() above
    * ============================================================ */
 
   /* ── Sidebar: CFFDRS index values ── */
-  const idx = data.nationalIndices;
-  const indexEls = {
-    ffmc: document.querySelector('[data-index="ffmc"]'),
-    dmc:  document.querySelector('[data-index="dmc"]'),
-    dc:   document.querySelector('[data-index="dc"]'),
-    isi:  document.querySelector('[data-index="isi"]'),
-    bui:  document.querySelector('[data-index="bui"]'),
-    fwi:  document.querySelector('[data-index="fwi"]'),
-    dsr:  document.querySelector('[data-index="dsr"]'),
-  };
-  Object.keys(indexEls).forEach((k) => {
-    if (indexEls[k]) {
-      indexEls[k].textContent =
-        typeof idx[k] === "number" ? idx[k].toFixed(1) : idx[k];
-    }
-  });
+  if (data) {
+    const idx = data.nationalIndices;
+    const indexEls = {
+      ffmc: document.querySelector('[data-index="ffmc"]'),
+      dmc:  document.querySelector('[data-index="dmc"]'),
+      dc:   document.querySelector('[data-index="dc"]'),
+      isi:  document.querySelector('[data-index="isi"]'),
+      bui:  document.querySelector('[data-index="bui"]'),
+      fwi:  document.querySelector('[data-index="fwi"]'),
+      dsr:  document.querySelector('[data-index="dsr"]'),
+    };
+    Object.keys(indexEls).forEach((k) => {
+      if (indexEls[k]) {
+        indexEls[k].textContent =
+          typeof idx[k] === "number" ? idx[k].toFixed(1) : idx[k];
+      }
+    });
 
-  document.getElementById("fire-count").textContent = data.hotspots.length;
-  document.getElementById("data-date").textContent  = data.updated;
+    const dataDateEl = document.getElementById("data-date");
+    if (dataDateEl) dataDateEl.textContent = data.updated;
+  }
 
   /* ── Ecoregion chart ── */
   const ecoSelect = document.getElementById("ecoregion-select");
-  data.ecoregions.forEach((name) => {
-    const opt = document.createElement("option");
-    opt.value = name;
-    opt.textContent = name;
-    ecoSelect.appendChild(opt);
-  });
+  if (data && ecoSelect) {
+    data.ecoregions.forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      ecoSelect.appendChild(opt);
+    });
+  }
 
   function slugify(name) {
     return name.replace(/\s+/g, "_");
@@ -571,6 +527,7 @@
     const img         = document.getElementById("ecoregion-chart");
     const caption     = document.getElementById("ecoregion-caption");
     const placeholder = document.getElementById("chart-placeholder");
+    if (!img || !caption || !placeholder) return;
     caption.textContent = name;
     const slug  = slugify(name).toLowerCase();
     const files = window.LSI_ECOREGION_FILES || [];
@@ -579,24 +536,27 @@
     );
     img.alt = `FWI vs FRP — ${name}`;
     if (match) {
-      img.src             = "assets/ecoregions/" + match;
-      img.style.display   = "block";
+      img.src                   = "/assets/ecoregions/" + match;
+      img.style.display         = "block";
       placeholder.style.display = "none";
     } else {
-      img.src             = "";
-      img.style.display   = "none";
-      placeholder.style.display  = "flex";
-      placeholder.textContent    = `No chart file for "${name}" in assets/ecoregions/`;
+      img.src                   = "";
+      img.style.display         = "none";
+      placeholder.style.display = "flex";
+      placeholder.textContent   = `No chart file for "${name}" in assets/ecoregions/`;
     }
   }
 
-  ecoSelect.addEventListener("change", () => loadEcoregionChart(ecoSelect.value));
-  loadEcoregionChart(ecoSelect.value);
+  if (ecoSelect) {
+    ecoSelect.addEventListener("change", () => loadEcoregionChart(ecoSelect.value));
+    loadEcoregionChart(ecoSelect.value);
+  }
 
   /* ── Fire detail panel ── */
   const detailPanel = document.getElementById("fire-detail");
 
   function showFireDetail(f) {
+    if (!detailPanel) return;
     detailPanel.hidden = false;
     detailPanel.innerHTML = `
       <button type="button" class="btn btn-sm" id="close-detail" style="float:right;margin:0">Close</button>
@@ -616,13 +576,13 @@
       </dl>
       <button type="button" class="btn btn-sm" id="fly-to-fire">Zoom to location</button>
     `;
-    document.getElementById("fly-to-fire").addEventListener("click", () => {
+    document.getElementById("fly-to-fire")?.addEventListener("click", () => {
       window._mapFlyTo(+f.lat, +f.lon);
     });
-    document.getElementById("close-detail").addEventListener("click", () => {
+    document.getElementById("close-detail")?.addEventListener("click", () => {
       detailPanel.hidden = true;
     });
-    if ([...ecoSelect.options].some((o) => o.value === f.ecoregion)) {
+    if (ecoSelect && [...ecoSelect.options].some((o) => o.value === f.ecoregion)) {
       ecoSelect.value = f.ecoregion;
     }
     loadEcoregionChart(f.ecoregion);
@@ -633,10 +593,43 @@
     document.body.classList.toggle("sidebar-collapsed");
   });
 
-  /* ── Logout ── */
-  document.getElementById("btn-logout")?.addEventListener("click", () => {
-    sessionStorage.removeItem("lsi_auth");
-    window.location.href = "login.html";
+  /* ── Auth UI (optional sign-in; dashboard stays public) ── */
+  const btnSignIn = document.getElementById("btn-signin");
+  const btnLogout = document.getElementById("btn-logout");
+
+  async function refreshAuthUI() {
+    try {
+      const res = await fetch("/api/auth/status/");
+      const auth = await res.json();
+      if (auth.authenticated) {
+        if (btnSignIn) btnSignIn.hidden = true;
+        if (btnLogout) btnLogout.hidden = false;
+      } else {
+        if (btnSignIn) btnSignIn.hidden = false;
+        if (btnLogout) btnLogout.hidden = true;
+      }
+    } catch {
+      if (btnSignIn) btnSignIn.hidden = false;
+      if (btnLogout) btnLogout.hidden = true;
+    }
+  }
+
+  refreshAuthUI();
+
+  btnLogout?.addEventListener("click", async () => {
+    try {
+      await fetch("/api/auth/logout/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": getCsrfToken() },
+        credentials: "same-origin",
+      });
+    } catch { /* ignore */ }
+    window.location.href = "/login/";
   });
+
+  function getCsrfToken() {
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : "";
+  }
 
 })();
