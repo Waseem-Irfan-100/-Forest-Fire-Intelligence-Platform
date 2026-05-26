@@ -39,6 +39,8 @@ FIRMS_API_KEY = os.getenv("FIRMS_API_KEY", "")
 # Application definition
 
 INSTALLED_APPS = [
+    # Custom user model must load before admin/auth create their tables.
+    'accounts.apps.AccountsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -79,7 +81,7 @@ ROOT_URLCONF = 'forestfire_backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR/ 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -99,8 +101,12 @@ WSGI_APPLICATION = 'forestfire_backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'forestfiredb',
+        'USER': 'postgres',
+        'PASSWORD': 'Irfan2005',
+        'HOST': 'localhost',
+        'PORT': '5433',
     }
 }
 
@@ -141,6 +147,10 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",
@@ -151,3 +161,6 @@ CSRF_TRUSTED_ORIGINS = [
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = "accounts.CustomUser"
+
